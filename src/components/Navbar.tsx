@@ -2,7 +2,7 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Heart, Nutrition, MessageSquare, Hospital, Home } from "lucide-react";
+import { Heart, Apple, MessageSquare, Hospital, Home } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 const Navbar = () => {
@@ -23,7 +23,7 @@ const Navbar = () => {
             <div className="flex items-center space-x-4">
               <NavLink to="/" icon={<Home className="h-4 w-4" />} label="Home" />
               <NavLink to="/prediction" icon={<Heart className="h-4 w-4" />} label="Health Prediction" />
-              <NavLink to="/nutrition" icon={<Nutrition className="h-4 w-4" />} label="Nutrition" />
+              <NavLink to="/nutrition" icon={<Apple className="h-4 w-4" />} label="Nutrition" />
               <NavLink to="/chatbot" icon={<MessageSquare className="h-4 w-4" />} label="AI Assistant" />
               <NavLink to="/emergency" icon={<Hospital className="h-4 w-4" />} label="Emergency" />
             </div>
@@ -39,7 +39,7 @@ const Navbar = () => {
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around py-2 z-50">
           <MobileNavItem to="/" icon={<Home className="h-5 w-5" />} label="Home" />
           <MobileNavItem to="/prediction" icon={<Heart className="h-5 w-5" />} label="Predict" />
-          <MobileNavItem to="/nutrition" icon={<Nutrition className="h-5 w-5" />} label="Nutrition" />
+          <MobileNavItem to="/nutrition" icon={<Apple className="h-5 w-5" />} label="Nutrition" />
           <MobileNavItem to="/chatbot" icon={<MessageSquare className="h-5 w-5" />} label="Chat" />
           <MobileNavItem to="/emergency" icon={<Hospital className="h-5 w-5" />} label="Emergency" />
         </div>

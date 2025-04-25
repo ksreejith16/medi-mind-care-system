@@ -1,5 +1,5 @@
 
-import { Heart, Nutrition, MessageSquare, Hospital } from "lucide-react";
+import { Heart, Apple, MessageSquare, Hospital } from "lucide-react";
 import FeatureCard from "./FeatureCard";
 
 const FeaturesSection = () => {
@@ -25,7 +25,7 @@ const FeaturesSection = () => {
           <FeatureCard
             title="Food Recommendations"
             description="Personalized nutrition guidance based on your health profile and dietary needs."
-            icon={<Nutrition className="h-6 w-6" />}
+            icon={<Apple className="h-6 w-6" />}
             to="/nutrition"
           />
           <FeatureCard

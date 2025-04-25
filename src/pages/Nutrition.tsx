@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Nutrition, Settings, User, Activity } from "lucide-react";
+import { Apple, Settings, User, Activity } from "lucide-react";
 
 const NutritionPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -33,7 +33,7 @@ const NutritionPage = () => {
               </TabsTrigger>
               <TabsTrigger value="recommendations">
                 <div className="flex items-center space-x-2">
-                  <Nutrition className="h-4 w-4" />
+                  <Apple className="h-4 w-4" />
                   <span>Recommendations</span>
                 </div>
               </TabsTrigger>

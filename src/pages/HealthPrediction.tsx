@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart, Activity, Thermometer, Pulse } from "lucide-react";
+import { Heart, Activity, Thermometer, Monitor } from "lucide-react";
 
 const HealthPrediction = () => {
   const [formData, setFormData] = useState({
@@ -59,7 +58,7 @@ const HealthPrediction = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
-                      <Pulse className="h-5 w-5 text-health-600" />
+                      <Heart className="h-5 w-5 text-health-600" />
                       <Label htmlFor="heartRate">Heart Rate (BPM)</Label>
                     </div>
                     <Input
@@ -124,7 +123,7 @@ const HealthPrediction = () => {
 
                   <div className="space-y-2 md:col-span-2">
                     <div className="flex items-center space-x-2">
-                      <Heart className="h-5 w-5 text-health-600" />
+                      <Monitor className="h-5 w-5 text-health-600" />
                       <Label htmlFor="oxygenSaturation">Oxygen Saturation (SpO2 %)</Label>
                     </div>
                     <Input

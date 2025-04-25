@@ -60,7 +60,26 @@ const NutritionPage = () => {
             </TabsList>
             
             <TabsContent value="profile" className="mt-6">
-              <GeneticQuiz onSubmit={handleQuizSubmit} />
+              <div className="space-y-6">
+                {Object.keys(geneticProfile).length > 0 ? (
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                    <h3 className="text-lg font-medium text-green-800">Genetic Profile Saved</h3>
+                    <p className="text-green-700 mt-1">Your genetic information has been saved. Visit the Analysis tab to see personalized nutrition insights.</p>
+                    <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {Object.entries(geneticProfile).map(([gene, variant]) => (
+                        variant !== "Unknown" && (
+                          <div key={gene} className="bg-white p-2 rounded text-sm">
+                            <span className="font-medium">{gene}:</span> {variant}
+                          </div>
+                        )
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic">Complete the quiz below to generate your genetic profile...</p>
+                )}
+                <GeneticQuiz onSubmit={handleQuizSubmit} />
+              </div>
             </TabsContent>
             
             <TabsContent value="tracker" className="mt-6">
@@ -68,7 +87,7 @@ const NutritionPage = () => {
             </TabsContent>
             
             <TabsContent value="analysis" className="mt-6">
-              <NutritionAnalysis />
+              <NutritionAnalysis geneticProfile={geneticProfile} />
             </TabsContent>
           </Tabs>
         </div>

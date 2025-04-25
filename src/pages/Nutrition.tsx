@@ -1,17 +1,34 @@
-
-import Layout from "@/components/Layout";
 import { useState } from "react";
+import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Apple, Settings, User, Activity } from "lucide-react";
+import GeneticQuiz from "@/components/nutrition/GeneticQuiz";
+import { foodDatabase, geneticVariants, type Food } from "@/data/foodData";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Apple, Settings, User, Activity } from "lucide-react";
 
 const NutritionPage = () => {
   const [activeTab, setActiveTab] = useState("profile");
-  
+  const [geneticProfile, setGeneticProfile] = useState<Record<string, string>>({});
+  const [recommendations, setRecommendations] = useState<Food[]>([]);
+
+  const handleQuizSubmit = (results: Record<string, string>) => {
+    setGeneticProfile(results);
+    generateRecommendations(results);
+  };
+
+  const generateRecommendations = (profile: Record<string, string>) => {
+    // Simple recommendation logic based on genetic matches
+    const recommendedFoods = foodDatabase.foods.filter(food => {
+      return food.geneticMatches.some(gene => profile[gene] === "Heterozygous" || profile[gene] === "Homozygous");
+    });
+    
+    setRecommendations(recommendedFoods);
+  };
+
   return (
     <Layout>
       <div className="page-container">
@@ -46,11 +63,34 @@ const NutritionPage = () => {
             </TabsList>
             
             <TabsContent value="profile" className="mt-6">
-              <UserProfileForm />
+              <GeneticQuiz onSubmit={handleQuizSubmit} />
             </TabsContent>
             
             <TabsContent value="recommendations" className="mt-6">
-              <FoodRecommendations />
+              {recommendations.length > 0 ? (
+                <div className="space-y-4">
+                  <h3 className="text-xl font-semibold">Your Recommended Foods</h3>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    {recommendations.map((food) => (
+                      <div key={food.name} className="p-4 rounded-lg border">
+                        <h4 className="font-semibold">{food.name}</h4>
+                        <p className="text-sm text-gray-600">Nutrients: {food.nutrients}</p>
+                        <div className="mt-2 text-sm">
+                          <p>Calories: {food.calories}</p>
+                          <p>Protein: {food.protein}g</p>
+                          <p>Carbs: {food.carbs}g</p>
+                          <p>Fat: {food.fat}g</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Settings className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-4 text-gray-500">Complete the genetic quiz to get personalized recommendations</p>
+                </div>
+              )}
             </TabsContent>
             
             <TabsContent value="tracking" className="mt-6">

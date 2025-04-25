@@ -1,66 +1,92 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Hospital, MapPin, Phone, AlertTriangle, Clock } from "lucide-react";
+import { Hospital, MapPin, Phone, AlertTriangle, Clock, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Hospital {
-  id: number;
+  id: string;
   name: string;
-  distance: string;
-  address: string;
-  phone: string;
-  emergencyServices: string[];
-  waitTime?: string;
+  distance?: string;
+  address?: string;
+  lat?: number;
+  lon?: number;
 }
 
-const mockHospitals: Hospital[] = [
-  {
-    id: 1,
-    name: "City General Hospital",
-    distance: "1.2 km",
-    address: "123 Main Street, Downtown",
-    phone: "555-123-4567",
-    emergencyServices: ["24/7 Emergency Room", "Trauma Center", "Cardiac Care"],
-    waitTime: "15 mins",
-  },
-  {
-    id: 2,
-    name: "Memorial Medical Center",
-    distance: "3.5 km",
-    address: "456 Oak Avenue, Westside",
-    phone: "555-987-6543",
-    emergencyServices: ["24/7 Emergency Room", "Pediatric ER", "Stroke Center"],
-    waitTime: "25 mins",
-  },
-  {
-    id: 3,
-    name: "University Health Center",
-    distance: "5.1 km",
-    address: "789 University Blvd, Eastside",
-    phone: "555-456-7890",
-    emergencyServices: ["24/7 Emergency Room", "Level 1 Trauma Center", "Burn Unit"],
-    waitTime: "10 mins",
-  },
-];
-
 const EmergencyPage = () => {
-  const [hospitals, setHospitals] = useState<Hospital[]>(mockHospitals);
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+
+  const getNearbyHospitals = async (lat: number, lon: number) => {
+    try {
+      const radius = 2000; // in meters
+      const query = `
+        [out:json];
+        (
+          node["amenity"="hospital"](around:${radius},${lat},${lon});
+          way["amenity"="hospital"](around:${radius},${lat},${lon});
+          relation["amenity"="hospital"](around:${radius},${lat},${lon});
+        );
+        out center;
+      `;
+      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+      
+      const response = await fetch(url);
+      const data = await response.json();
+      
+      const nearbyHospitals = data.elements.map((hospital: any) => ({
+        id: hospital.id.toString(),
+        name: hospital.tags.name || "Unnamed Hospital",
+        lat: hospital.lat || hospital.center?.lat,
+        lon: hospital.lon || hospital.center?.lon,
+        address: hospital.tags.address || "Address unavailable",
+        distance: "Calculating..."
+      }));
+
+      setHospitals(nearbyHospitals);
+      toast.success(`Found ${nearbyHospitals.length} nearby hospitals`);
+    } catch (error) {
+      console.error("Error fetching hospitals:", error);
+      setLocationError("Error fetching nearby hospitals. Please try again.");
+      toast.error("Failed to find nearby hospitals");
+    }
+  };
 
   const handleFindNearbyHospitals = () => {
     setIsLocating(true);
     setLocationError(null);
     
-    // Simulating geolocation and API call
-    // This is where you'll integrate your location-based hospital finder code
-    setTimeout(() => {
-      // Mock successful response
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
       setIsLocating(false);
-      // setHospitals would normally be updated with real data from your API
-    }, 2000);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude: lat, longitude: lon } = position.coords;
+        setUserLocation({ lat, lon });
+        getNearbyHospitals(lat, lon);
+        setIsLocating(false);
+      },
+      (error) => {
+        console.error("Geolocation error:", error);
+        setLocationError("Unable to access location. Please enable location services.");
+        setIsLocating(false);
+        toast.error("Location access denied");
+      }
+    );
+  };
+
+  const getDirectionsUrl = (hospital: Hospital) => {
+    if (hospital.lat && hospital.lon) {
+      return `https://www.google.com/maps/dir/?api=1&destination=${hospital.lat},${hospital.lon}`;
+    }
+    return "#";
   };
 
   return (
@@ -87,8 +113,16 @@ const EmergencyPage = () => {
                 <Phone className="mr-2 h-5 w-5" />
                 Call Emergency (911)
               </Button>
-              <Button size="lg" onClick={handleFindNearbyHospitals} disabled={isLocating}>
-                <MapPin className="mr-2 h-5 w-5" />
+              <Button 
+                size="lg" 
+                onClick={handleFindNearbyHospitals} 
+                disabled={isLocating}
+              >
+                {isLocating ? (
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                  <MapPin className="mr-2 h-5 w-5" />
+                )}
                 {isLocating ? "Locating..." : "Find Nearby Hospitals"}
               </Button>
             </div>
@@ -100,73 +134,50 @@ const EmergencyPage = () => {
                 <AlertTriangle className="h-5 w-5 mr-2" />
                 <p>{locationError}</p>
               </div>
-              <p className="mt-2 text-sm">
-                Please ensure location services are enabled in your browser and try again.
-              </p>
             </div>
           )}
           
           <div className="space-y-6">
             <h3 className="text-xl font-semibold text-gray-900">Nearby Hospitals</h3>
-            {hospitals.map((hospital) => (
-              <Card key={hospital.id} className="transition-shadow hover:shadow-md">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg">{hospital.name}</CardTitle>
-                    <span className="text-sm bg-health-100 text-health-800 px-2 py-1 rounded-full">
-                      {hospital.distance}
-                    </span>
-                  </div>
-                  <CardDescription>
-                    <div className="flex items-center text-gray-600">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {hospital.address}
+            {hospitals.length > 0 ? (
+              hospitals.map((hospital) => (
+                <Card key={hospital.id} className="transition-shadow hover:shadow-md">
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg">{hospital.name}</CardTitle>
                     </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <div className="space-y-2">
-                    <div className="flex items-center">
-                      <Phone className="h-4 w-4 text-gray-500 mr-2" />
-                      <span>{hospital.phone}</span>
-                    </div>
-                    {hospital.waitTime && (
-                      <div className="flex items-center">
-                        <Clock className="h-4 w-4 text-gray-500 mr-2" />
-                        <span>Estimated wait time: <strong>{hospital.waitTime}</strong></span>
-                      </div>
+                    {hospital.address && (
+                      <CardDescription>
+                        <div className="flex items-center text-gray-600">
+                          <MapPin className="h-4 w-4 mr-1" />
+                          {hospital.address}
+                        </div>
+                      </CardDescription>
                     )}
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {hospital.emergencyServices.map((service, index) => (
-                        <span key={index} className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded">
-                          {service}
-                        </span>
-                      ))}
+                  </CardHeader>
+                  <CardFooter>
+                    <div className="flex space-x-2 w-full">
+                      <Button 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => window.open(getDirectionsUrl(hospital), '_blank')}
+                      >
+                        <MapPin className="mr-2 h-4 w-4" />
+                        Get Directions
+                      </Button>
                     </div>
-                  </div>
+                  </CardFooter>
+                </Card>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="p-6">
+                  <p className="text-center text-gray-500">
+                    {isLocating ? "Searching for nearby hospitals..." : "Click 'Find Nearby Hospitals' to see available emergency facilities in your area"}
+                  </p>
                 </CardContent>
-                <CardFooter>
-                  <div className="flex space-x-2 w-full">
-                    <Button variant="outline" className="flex-1">
-                      <Phone className="mr-2 h-4 w-4" />
-                      Call
-                    </Button>
-                    <Button className="flex-1">
-                      <MapPin className="mr-2 h-4 w-4" />
-                      Directions
-                    </Button>
-                  </div>
-                </CardFooter>
               </Card>
-            ))}
-          </div>
-          
-          <div className="mt-12 bg-white p-6 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Integration Notes</h3>
-            <p className="mt-2 text-gray-600">
-              This is where you'll integrate your location-based hospital finder code. 
-              The interface displays nearby emergency facilities and provides contact information.
-            </p>
+            )}
           </div>
         </div>
       </div>

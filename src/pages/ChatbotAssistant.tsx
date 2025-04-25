@@ -1,82 +1,122 @@
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Layout from "@/components/Layout";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { MessageSquare, Send, User } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+// Local storage key for saving chat history
+const CHAT_HISTORY_KEY = 'medimind_chat_history';
 
 interface Message {
-  id: number;
+  role: 'user' | 'model';
   content: string;
-  sender: 'user' | 'bot';
   timestamp: Date;
 }
 
-const initialMessages: Message[] = [
-  {
-    id: 1,
-    content: "Hello! I'm your AI health assistant. How can I help you today?",
-    sender: 'bot',
-    timestamp: new Date()
-  }
-];
+const initialMessages: Message[] = [{
+  role: 'model',
+  content: "Hello! I'm your AI health assistant. How can I help you today?",
+  timestamp: new Date()
+}];
 
 const ChatbotAssistant = () => {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>(() => {
+    const savedMessages = localStorage.getItem(CHAT_HISTORY_KEY);
+    return savedMessages ? JSON.parse(savedMessages) : initialMessages;
+  });
+  
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [chatSession, setChatSession] = useState<any>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
+  // Initialize Gemini AI
+  useEffect(() => {
+    try {
+      const genAI = new GoogleGenerativeAI("AIzaSyDXGy81S5vaQz2EdbmSiD1JaOFZQhey7MA");
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    // Add user message
+      // Convert UI messages to Gemini chat history format
+      const chatHistory = messages.slice(1).map(msg => ({
+        role: msg.role,
+        parts: [{ text: msg.content }]
+      }));
+
+      const chat = model.startChat({
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+        history: chatHistory,
+      });
+
+      setChatSession(chat);
+    } catch (error) {
+      console.error("Error initializing chat:", error);
+    }
+  }, []);
+
+  // Save messages to local storage
+  useEffect(() => {
+    localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputValue.trim() || !chatSession || isTyping) return;
+
     const userMessage: Message = {
-      id: messages.length + 1,
+      role: 'user',
       content: inputValue,
-      sender: 'user',
       timestamp: new Date()
     };
 
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
 
-    // Simulate AI response
-    // This is where you'll integrate your chatbot code
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: messages.length + 2,
-        content: getPlaceholderResponse(inputValue),
-        sender: 'bot',
+    try {
+      const result = await chatSession.sendMessage(inputValue);
+      const response = result.response;
+      const responseText = response.text();
+
+      const botMessage: Message = {
+        role: 'model',
+        content: responseText,
         timestamp: new Date()
       };
 
-      setMessages((prev) => [...prev, botResponse]);
+      setMessages(prev => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        role: 'model',
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Please try again later.'}`,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
-  };
-
-  const getPlaceholderResponse = (input: string) => {
-    const lowerInput = input.toLowerCase();
-    
-    if (lowerInput.includes('headache') || lowerInput.includes('head') || lowerInput.includes('pain')) {
-      return "Headaches can be caused by various factors including stress, dehydration, or lack of sleep. For mild headaches, try drinking water, resting in a dark room, or taking over-the-counter pain relievers. If you experience severe or persistent headaches, please consult with a healthcare professional.";
-    } else if (lowerInput.includes('cold') || lowerInput.includes('flu') || lowerInput.includes('fever')) {
-      return "For cold and flu symptoms, it's important to rest, stay hydrated, and consider over-the-counter medications to manage symptoms. If you have a high fever or symptoms persist for more than a week, please consult with a healthcare professional.";
-    } else if (lowerInput.includes('diet') || lowerInput.includes('nutrition') || lowerInput.includes('food')) {
-      return "A balanced diet is crucial for overall health. Try to include a variety of fruits, vegetables, lean proteins, and whole grains. Check our nutrition recommendations feature for personalized advice based on your health profile!";
-    } else {
-      return "Thank you for your question. As an AI assistant, I can provide general health information, but for specific medical advice, please consult with a healthcare professional. Is there anything specific about your health you'd like to know more about?";
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      handleSendMessage(e);
     }
+  };
+
+  const clearChat = () => {
+    localStorage.removeItem(CHAT_HISTORY_KEY);
+    setMessages(initialMessages);
   };
 
   return (
@@ -86,7 +126,7 @@ const ChatbotAssistant = () => {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">AI Health Assistant</h1>
             <p className="mt-4 text-xl text-gray-500">
-              Your personal health companion, ready to assist 24/7
+              Your personal health companion, powered by Gemini AI
             </p>
           </div>
           
@@ -102,24 +142,24 @@ const ChatbotAssistant = () => {
             </CardHeader>
             <CardContent>
               <div className="h-[500px] overflow-y-auto space-y-4 p-4 bg-gray-50 rounded-md">
-                {messages.map((msg) => (
+                {messages.map((msg, index) => (
                   <div
-                    key={msg.id}
+                    key={index}
                     className={cn(
                       "flex",
-                      msg.sender === 'user' ? "justify-end" : "justify-start"
+                      msg.role === 'user' ? "justify-end" : "justify-start"
                     )}
                   >
                     <div
                       className={cn(
                         "max-w-[80%] rounded-lg p-4",
-                        msg.sender === 'user'
+                        msg.role === 'user'
                           ? "bg-health-600 text-white"
                           : "bg-white border border-gray-200"
                       )}
                     >
                       <div className="flex items-center space-x-2 mb-1">
-                        {msg.sender === 'user' ? (
+                        {msg.role === 'user' ? (
                           <>
                             <span className="text-sm font-medium">You</span>
                             <User className="h-4 w-4" />
@@ -131,7 +171,7 @@ const ChatbotAssistant = () => {
                           </>
                         )}
                       </div>
-                      <p className="text-sm">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                       <div className="text-xs opacity-70 mt-1 text-right">
                         {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -150,36 +190,36 @@ const ChatbotAssistant = () => {
                     </div>
                   </div>
                 )}
+                <div ref={messagesEndRef} />
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-4">
               <div className="flex w-full items-center space-x-2">
                 <Input
                   placeholder="Type your health question..."
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
+                  disabled={isTyping || !chatSession}
                 />
                 <Button
                   type="button"
-                  size="icon"
                   onClick={handleSendMessage}
-                  disabled={!inputValue.trim() || isTyping}
+                  disabled={!inputValue.trim() || isTyping || !chatSession}
                 >
                   <Send className="h-4 w-4" />
                   <span className="sr-only">Send</span>
                 </Button>
               </div>
+              <Button
+                variant="outline"
+                onClick={clearChat}
+                className="w-full"
+              >
+                Clear Chat History
+              </Button>
             </CardFooter>
           </Card>
-          
-          <div className="mt-8 bg-white p-6 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Integration Notes</h3>
-            <p className="mt-2 text-gray-600">
-              This is where you'll integrate your AI chatbot health assistant code. 
-              The interface allows users to ask health-related questions and receive responses from your AI assistant.
-            </p>
-          </div>
         </div>
       </div>
     </Layout>

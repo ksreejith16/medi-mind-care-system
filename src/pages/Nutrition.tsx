@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,7 @@ const NutritionPage = () => {
 
   const generateRecommendations = (profile: Record<string, string>) => {
     // Simple recommendation logic based on genetic matches
-    const recommendedFoods = foodDatabase.foods.filter(food => {
+    const recommendedFoods: Food[] = foodDatabase.foods.filter(food => {
       return food.geneticMatches.some(gene => profile[gene] === "Heterozygous" || profile[gene] === "Homozygous");
     });
     

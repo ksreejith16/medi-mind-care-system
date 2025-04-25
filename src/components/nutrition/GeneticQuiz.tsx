@@ -1,8 +1,21 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 interface GeneticQuizProps {
   onSubmit: (results: Record<string, string>) => void;
@@ -27,6 +40,16 @@ const GeneticQuiz = ({ onSubmit }: GeneticQuizProps) => {
     caffeine: "Caffeine strongly affects my sleep, even when consumed early in the day",
     stress: "I tend to crave specific foods when stressed",
     vitd: "I have issues with bone density or vitamin D levels",
+  };
+
+  const tooltips = {
+    folate: "Related to MTHFR gene and B vitamin metabolism",
+    fat: "Related to APOE gene and fat metabolism",
+    hunger: "Related to FTO gene and appetite regulation",
+    carb: "Related to TCF7L2 gene and insulin response",
+    caffeine: "Related to CYP1A2 gene and caffeine metabolism",
+    stress: "Related to COMT gene and stress response",
+    vitd: "Related to VDR gene and vitamin D absorption",
   };
 
   const handleSubmit = () => {
@@ -55,7 +78,20 @@ const GeneticQuiz = ({ onSubmit }: GeneticQuizProps) => {
       <CardContent className="space-y-6">
         {Object.entries(questions).map(([key, question]) => (
           <div key={key} className="space-y-2">
-            <p className="text-sm font-medium">{question}</p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium">{question}</p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-5 w-5 rounded-full p-0">
+                    <Info className="h-3 w-3" />
+                    <span className="sr-only">Info</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{tooltips[key as keyof typeof tooltips]}</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">Not at all</span>
               <Slider

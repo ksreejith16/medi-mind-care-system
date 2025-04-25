@@ -46,7 +46,7 @@ export const foodDatabase = {
       nutrients: 'Calcium, Vitamin B12, Potassium',
       geneticMatches: ['APOA2', 'TCF7L2']
     }
-  ] as const
+  ]
 };
 
 export interface Food {

@@ -1,18 +1,26 @@
+
 import { useState } from "react";
 import Layout from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Heart, Activity, Thermometer, Monitor } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Heart, Activity, Thermometer, Monitor, User, Scale, Ruler } from "lucide-react";
+import { toast } from "sonner";
 
 const HealthPrediction = () => {
   const [formData, setFormData] = useState({
     heartRate: "",
-    bloodPressureSystolic: "",
-    bloodPressureDiastolic: "",
-    temperature: "",
+    respiratoryRate: "",
+    bodyTemperature: "",
     oxygenSaturation: "",
+    systolic: "",
+    diastolic: "",
+    age: "",
+    gender: "0", // 0 for Female, 1 for Male
+    weight: "",
+    height: "",
   });
 
   const [prediction, setPrediction] = useState<string | null>(null);
@@ -23,16 +31,41 @@ const HealthPrediction = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleGenderChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, gender: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Placeholder for ML model integration
-    // This is where you'll integrate your Jupyter notebook code
-    setTimeout(() => {
-      setPrediction("Based on the provided vital signs, you appear to be in normal health condition. Continue monitoring your blood pressure as it's slightly elevated.");
+
+    try {
+      // Placeholder for API call
+      // This is where you'll integrate with your Python backend API
+      const features = [
+        parseFloat(formData.heartRate),
+        parseFloat(formData.respiratoryRate),
+        parseFloat(formData.bodyTemperature),
+        parseFloat(formData.oxygenSaturation),
+        parseFloat(formData.systolic),
+        parseFloat(formData.diastolic),
+        parseFloat(formData.age),
+        parseInt(formData.gender),
+        parseFloat(formData.weight),
+        parseFloat(formData.height),
+      ];
+
+      // Temporary simulation of prediction
+      setTimeout(() => {
+        setPrediction("Based on the vital signs provided, you appear to be in normal health condition. Note: This is a placeholder prediction. Please connect to the actual ML model API for accurate results.");
+        setLoading(false);
+        toast.success("Health prediction completed");
+      }, 1500);
+    } catch (error) {
+      console.error("Prediction error:", error);
+      toast.error("Failed to generate prediction");
       setLoading(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -40,15 +73,15 @@ const HealthPrediction = () => {
       <div className="page-container">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Health Prediction</h1>
+            <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">Health Risk Prediction</h1>
             <p className="mt-4 text-xl text-gray-500">
-              Enter your vital signs to get AI-powered health predictions
+              Enter your vital signs for an AI-powered health risk assessment
             </p>
           </div>
 
-          <Card className="mb-8 shadow-lg">
+          <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Enter Your Vital Signs</CardTitle>
+              <CardTitle>Enter Your Health Data</CardTitle>
               <CardDescription>
                 Please provide accurate measurements for the best prediction results
               </CardDescription>
@@ -75,30 +108,14 @@ const HealthPrediction = () => {
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <Activity className="h-5 w-5 text-health-600" />
-                      <Label htmlFor="bloodPressureSystolic">Blood Pressure (Systolic)</Label>
+                      <Label htmlFor="respiratoryRate">Respiratory Rate</Label>
                     </div>
                     <Input
-                      id="bloodPressureSystolic"
-                      name="bloodPressureSystolic"
+                      id="respiratoryRate"
+                      name="respiratoryRate"
                       type="number"
-                      placeholder="90-120"
-                      value={formData.bloodPressureSystolic}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <Activity className="h-5 w-5 text-health-600" />
-                      <Label htmlFor="bloodPressureDiastolic">Blood Pressure (Diastolic)</Label>
-                    </div>
-                    <Input
-                      id="bloodPressureDiastolic"
-                      name="bloodPressureDiastolic"
-                      type="number"
-                      placeholder="60-80"
-                      value={formData.bloodPressureDiastolic}
+                      placeholder="12-20"
+                      value={formData.respiratoryRate}
                       onChange={handleChange}
                       required
                     />
@@ -107,24 +124,24 @@ const HealthPrediction = () => {
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <Thermometer className="h-5 w-5 text-health-600" />
-                      <Label htmlFor="temperature">Body Temperature (°C)</Label>
+                      <Label htmlFor="bodyTemperature">Body Temperature (°C)</Label>
                     </div>
                     <Input
-                      id="temperature"
-                      name="temperature"
+                      id="bodyTemperature"
+                      name="bodyTemperature"
                       type="number"
                       step="0.1"
                       placeholder="36.5-37.5"
-                      value={formData.temperature}
+                      value={formData.bodyTemperature}
                       onChange={handleChange}
                       required
                     />
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <div className="flex items-center space-x-2">
                       <Monitor className="h-5 w-5 text-health-600" />
-                      <Label htmlFor="oxygenSaturation">Oxygen Saturation (SpO2 %)</Label>
+                      <Label htmlFor="oxygenSaturation">Oxygen Saturation (%)</Label>
                     </div>
                     <Input
                       id="oxygenSaturation"
@@ -136,40 +153,132 @@ const HealthPrediction = () => {
                       required
                     />
                   </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Activity className="h-5 w-5 text-health-600" />
+                      <Label htmlFor="systolic">Systolic BP (mmHg)</Label>
+                    </div>
+                    <Input
+                      id="systolic"
+                      name="systolic"
+                      type="number"
+                      placeholder="90-120"
+                      value={formData.systolic}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Activity className="h-5 w-5 text-health-600" />
+                      <Label htmlFor="diastolic">Diastolic BP (mmHg)</Label>
+                    </div>
+                    <Input
+                      id="diastolic"
+                      name="diastolic"
+                      type="number"
+                      placeholder="60-80"
+                      value={formData.diastolic}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <User className="h-5 w-5 text-health-600" />
+                      <Label>Gender</Label>
+                    </div>
+                    <RadioGroup value={formData.gender} onValueChange={handleGenderChange}>
+                      <div className="flex space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="0" id="female" />
+                          <Label htmlFor="female">Female</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="1" id="male" />
+                          <Label htmlFor="male">Male</Label>
+                        </div>
+                      </div>
+                    </RadioGroup>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <User className="h-5 w-5 text-health-600" />
+                      <Label htmlFor="age">Age (years)</Label>
+                    </div>
+                    <Input
+                      id="age"
+                      name="age"
+                      type="number"
+                      placeholder="18-100"
+                      value={formData.age}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Scale className="h-5 w-5 text-health-600" />
+                      <Label htmlFor="weight">Weight (kg)</Label>
+                    </div>
+                    <Input
+                      id="weight"
+                      name="weight"
+                      type="number"
+                      step="0.1"
+                      placeholder="40-150"
+                      value={formData.weight}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Ruler className="h-5 w-5 text-health-600" />
+                      <Label htmlFor="height">Height (m)</Label>
+                    </div>
+                    <Input
+                      id="height"
+                      name="height"
+                      type="number"
+                      step="0.01"
+                      placeholder="1.50-2.20"
+                      value={formData.height}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
                 </div>
               </CardContent>
               <CardFooter>
                 <Button type="submit" disabled={loading} className="w-full">
-                  {loading ? "Analyzing..." : "Predict Health Condition"}
+                  {loading ? "Analyzing..." : "Predict Health Risk"}
                 </Button>
               </CardFooter>
             </form>
           </Card>
 
           {prediction && (
-            <Card className="border-health-200 bg-health-50 animate-fade-in">
+            <Card className="border-health-200 bg-health-50">
               <CardHeader>
-                <CardTitle className="text-health-700">Health Prediction Result</CardTitle>
+                <CardTitle className="text-health-700">Health Risk Assessment</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-700">{prediction}</p>
               </CardContent>
               <CardFooter className="text-sm text-gray-500">
                 <p>
-                  This prediction is based on the vital signs you provided. Always consult with a healthcare professional for accurate diagnosis.
+                  This prediction is based on the vital signs you provided. Always consult with a healthcare professional for accurate medical advice.
                 </p>
               </CardFooter>
             </Card>
           )}
-
-          <div className="mt-12 bg-white p-6 rounded-lg border border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Integration Notes</h3>
-            <p className="mt-2 text-gray-600">
-              This is where you'll integrate your ML model from the Jupyter notebook. 
-              The form collects vital health data and sends it to your prediction model, 
-              which will return a health condition assessment.
-            </p>
-          </div>
         </div>
       </div>
     </Layout>
